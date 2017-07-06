@@ -37,6 +37,8 @@
 #     set -g fish_prompt_pwd_dir_length 0
 #     set -g theme_project_dir_length 1
 #     set -g theme_newline_cursor yes
+# Appand options
+#     set -g theme_display_aws no
 
 # ===========================
 # Helper methods
@@ -705,6 +707,31 @@ function __bobthefish_prompt_rubies -S -d 'Display current Ruby information'
   __bobthefish_show_ruby
 end
 
+function __bobthefish_prompt_aws -S -d 'Get the current aws profile'
+    [ "$theme_display_aws" != "no" ]; or return
+
+    set -l has_awscli (command aws --version ^/dev/null)
+    [ $status != 0 ]; and return
+
+    if [ "$AWS_DEFAULT_PROFILE" = "" ]
+      if [ "$AWS_PROFILE" = "" ]
+        return
+      end
+    end
+
+    set -l profile ( command aws configure list | grep 'profile' | sed -e 's/^[ ]*//g' | sed -E 's/  +/'\t'/g' | cut -d\t -f2)
+    if [ "$profile" != "<not set>" ]
+        __bobthefish_start_segment $__color_vi_mode_visual
+        echo -ns "$__bobthefish_aws_profile_glyph $profile "
+    end
+
+    set -l region  ( command aws configure list | grep 'region'  | sed -e 's/^[ ]*//g' | sed -E 's/  +/'\t'/g' | cut -d\t -f2)
+    if [ "$region" != "<not set>" ]
+        __bobthefish_start_segment $__color_vi_mode_default
+        echo -ns "$__bobthefish_aws_region_glyph $region "
+    end
+end
+
 # ===========================
 # Debugging functions
 # ===========================
@@ -831,6 +858,9 @@ function fish_prompt -d 'bobthefish, a fish theme optimized for awesome'
   set -l __bobthefish_superuser_glyph         '$ '
   set -l __bobthefish_bg_job_glyph            '% '
   set -l __bobthefish_hg_glyph                \u263F
+
+  set -l __bobthefish_aws_profile_glyph       \u2601
+  set -l __bobthefish_aws_region_glyph        \u2B54
 
   # Python glyphs
   set -l __bobthefish_superscript_glyph       \u00B9 \u00B2 \u00B3
@@ -1378,6 +1408,8 @@ function fish_prompt -d 'bobthefish, a fish theme optimized for awesome'
   else
     __bobthefish_prompt_dir
   end
+
+  __bobthefish_prompt_aws
 
   __bobthefish_finish_segments
 end
